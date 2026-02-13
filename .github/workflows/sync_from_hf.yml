@@ -1,0 +1,31 @@
+name: Sync from Hugging Face
+on:
+  schedule:
+    - cron: '0 * * * *' # 매시간 정각 실행
+  workflow_dispatch:      # 수동 실행 버튼 활성화
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        # 이 부분이 없으면 커밋할 때 "누가 수정했는지 모른다"며 에러가 납니다.
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync from Hugging Face
+        run: |
+          git remote add hf https://huggingface.co/spaces/gunudurumi/gunuberg
+          git fetch hf
+          # HF의 main 내용을 내 GitHub의 main으로 강제 병합
+          git merge hf/main --allow-unrelated-histories -X theirs
+          
+      - name: Push to GitHub
+        run: |
+          git push origin main
